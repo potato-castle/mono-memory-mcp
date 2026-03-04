@@ -11,6 +11,7 @@ Supports stdio, SSE, and streamable-http transports.
 import json
 import logging
 import os
+import re
 import sqlite3
 import sys
 import uuid
@@ -53,10 +54,8 @@ def _init_database() -> sqlite3.Connection:
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         );
-        CREATE INDEX IF NOT EXISTS idx_obs_content
-            ON observations(content);
-        CREATE INDEX IF NOT EXISTS idx_obs_tags
-            ON observations(tags);
+        DROP INDEX IF EXISTS idx_obs_content;
+        DROP INDEX IF EXISTS idx_obs_tags;
         CREATE INDEX IF NOT EXISTS idx_obs_project_time
             ON observations(project, created_at);
         CREATE INDEX IF NOT EXISTS idx_obs_author
@@ -70,9 +69,26 @@ def _init_database() -> sqlite3.Connection:
             updated_at  TEXT NOT NULL,
             PRIMARY KEY (project, section)
         );
+
+        -- FTS5 full-text search indexes (external content)
+        CREATE VIRTUAL TABLE IF NOT EXISTS observations_fts USING fts5(
+            content, tags,
+            content=observations, content_rowid=rowid,
+            tokenize='unicode61'
+        );
+        CREATE VIRTUAL TABLE IF NOT EXISTS contexts_fts USING fts5(
+            section, content,
+            content=project_contexts, content_rowid=rowid,
+            tokenize='unicode61'
+        );
     """)
+    # Rebuild FTS indexes only when empty (first migration or fresh DB)
+    if conn.execute("SELECT count(*) FROM observations_fts").fetchone()[0] == 0:
+        conn.execute("INSERT INTO observations_fts(observations_fts) VALUES('rebuild')")
+        conn.execute("INSERT INTO contexts_fts(contexts_fts) VALUES('rebuild')")
+        logger.info("FTS indexes rebuilt from existing data")
     conn.commit()
-    logger.info("Database initialized at %s", DB_PATH)
+    logger.info("Database initialized at %s (FTS5 enabled)", DB_PATH)
     return conn
 
 
@@ -89,6 +105,23 @@ def _row_to_dict(row: sqlite3.Row) -> dict:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat()
+
+
+def _sanitize_fts_query(query: str) -> str | None:
+    """Convert user input into a safe FTS5 query string.
+
+    Strips special characters, skips reserved keywords,
+    wraps each term in double quotes, and joins with AND.
+    Returns None if no valid search terms remain.
+    """
+    words = query.strip().split()
+    safe_terms: list[str] = []
+    for word in words:
+        cleaned = re.sub(r'[()\"*^:{}\[\]]', '', word)
+        if not cleaned or cleaned.upper() in ('AND', 'OR', 'NOT', 'NEAR'):
+            continue
+        safe_terms.append('"' + cleaned + '"')
+    return ' AND '.join(safe_terms) if safe_terms else None
 
 
 # === MCP Server ===
@@ -113,11 +146,20 @@ async def memory_save(
     db = _get_db()
     obs_id = str(uuid.uuid4())
     now = _now_iso()
+    author = author.strip()
+    project = project.strip()
+    content = content.strip()
+    tags = tags.strip()
 
-    db.execute(
+    cursor = db.execute(
         """INSERT INTO observations (id, author, project, content, tags, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (obs_id, author.strip(), project.strip(), content.strip(), tags.strip(), now, now),
+        (obs_id, author, project, content, tags, now, now),
+    )
+    # Sync FTS index
+    db.execute(
+        "INSERT INTO observations_fts(rowid, content, tags) VALUES (?, ?, ?)",
+        (cursor.lastrowid, content, tags),
     )
     db.commit()
     logger.info("Saved observation %s by %s", obs_id, author)
@@ -151,9 +193,9 @@ async def memory_search(
     project: str = "",
     limit: int = 20,
 ) -> str:
-    """Search the shared memory by keyword.
+    """Search the shared memory using full-text search.
 
-    Searches both observations and project contexts.
+    Searches both observations and project contexts with BM25 relevance ranking.
 
     Args:
         query: Search keywords (space-separated words are combined with AND)
@@ -162,40 +204,58 @@ async def memory_search(
         limit: Maximum number of results (default 20)
     """
     db = _get_db()
-    words = query.strip().split()
+    author = author.strip()
+    project = project.strip()
+    fts_query = _sanitize_fts_query(query)
 
-    # --- Search observations ---
-    obs_conds: list[str] = []
-    obs_params: list[str] = []
-    for word in words:
-        obs_conds.append("(content LIKE ? OR tags LIKE ?)")
-        obs_params.extend([f"%{word}%", f"%{word}%"])
-    if author.strip():
-        obs_conds.append("author = ?")
-        obs_params.append(author.strip())
-    if project.strip():
-        obs_conds.append("project = ?")
-        obs_params.append(project.strip())
-    obs_where = " AND ".join(obs_conds) if obs_conds else "1=1"
-    obs_sql = f"SELECT *, 'observation' as source FROM observations WHERE {obs_where} ORDER BY created_at DESC LIMIT ?"
-    obs_params.append(str(limit))
+    if fts_query is None:
+        return json.dumps({"count": 0, "results": []}, ensure_ascii=False)
+
+    # --- Search observations via FTS5 ---
+    obs_conds: list[str] = ["observations_fts MATCH ?"]
+    obs_params: list[object] = [fts_query]
+    if author:
+        obs_conds.append("o.author = ?")
+        obs_params.append(author)
+    if project:
+        obs_conds.append("o.project = ?")
+        obs_params.append(project)
+    obs_where = " AND ".join(obs_conds)
+    obs_sql = f"""
+        SELECT o.*, 'observation' as source, observations_fts.rank
+        FROM observations_fts
+        JOIN observations o ON o.rowid = observations_fts.rowid
+        WHERE {obs_where}
+        ORDER BY observations_fts.rank
+        LIMIT ?
+    """
+    obs_params.append(limit)
     obs_rows = db.execute(obs_sql, obs_params).fetchall()
 
-    # --- Search project contexts ---
-    ctx_conds: list[str] = []
-    ctx_params: list[str] = []
-    for word in words:
-        ctx_conds.append("(content LIKE ? OR section LIKE ?)")
-        ctx_params.extend([f"%{word}%", f"%{word}%"])
-    if project.strip():
-        ctx_conds.append("project = ?")
-        ctx_params.append(project.strip())
-    ctx_where = " AND ".join(ctx_conds) if ctx_conds else "1=1"
-    ctx_sql = f"SELECT project, section, content, updated_by as author, updated_at as created_at, 'context' as source FROM project_contexts WHERE {ctx_where} ORDER BY updated_at DESC LIMIT ?"
-    ctx_params.append(str(limit))
+    # --- Search project contexts via FTS5 ---
+    ctx_conds: list[str] = ["contexts_fts MATCH ?"]
+    ctx_params: list[object] = [fts_query]
+    if project:
+        ctx_conds.append("pc.project = ?")
+        ctx_params.append(project)
+    ctx_where = " AND ".join(ctx_conds)
+    ctx_sql = f"""
+        SELECT pc.project, pc.section, pc.content, pc.updated_by as author,
+               pc.updated_at as created_at, 'context' as source, contexts_fts.rank
+        FROM contexts_fts
+        JOIN project_contexts pc ON pc.rowid = contexts_fts.rowid
+        WHERE {ctx_where}
+        ORDER BY contexts_fts.rank
+        LIMIT ?
+    """
+    ctx_params.append(limit)
     ctx_rows = db.execute(ctx_sql, ctx_params).fetchall()
 
-    results = [_row_to_dict(r) for r in obs_rows] + [_row_to_dict(r) for r in ctx_rows]
+    # Merge, sort by relevance, and enforce limit
+    results = sorted(
+        [_row_to_dict(r) for r in obs_rows] + [_row_to_dict(r) for r in ctx_rows],
+        key=lambda r: r.get("rank", 0),
+    )[:limit]
 
     return json.dumps({"count": len(results), "results": results}, ensure_ascii=False)
 
@@ -276,21 +336,45 @@ async def memory_init(
     """
     db = _get_db()
     now = _now_iso()
+    project = project.strip()
+    section = section.strip()
+    content = content.strip()
+    author = author.strip()
 
-    db.execute(
+    # Capture old row for FTS delete (if updating)
+    old_row = db.execute(
+        "SELECT rowid, section, content FROM project_contexts WHERE project = ? AND section = ?",
+        (project, section),
+    ).fetchone()
+
+    cursor = db.execute(
         """INSERT INTO project_contexts (project, section, content, updated_by, updated_at)
            VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(project, section) DO UPDATE SET
                content = excluded.content,
                updated_by = excluded.updated_by,
                updated_at = excluded.updated_at""",
-        (project.strip(), section.strip(), content.strip(), author.strip(), now),
+        (project, section, content, author, now),
+    )
+
+    # Sync FTS index
+    if old_row:
+        db.execute(
+            "INSERT INTO contexts_fts(contexts_fts, rowid, section, content) VALUES('delete', ?, ?, ?)",
+            (old_row[0], old_row[1], old_row[2]),
+        )
+        rowid = old_row[0]  # rowid unchanged on UPDATE
+    else:
+        rowid = cursor.lastrowid
+    db.execute(
+        "INSERT INTO contexts_fts(rowid, section, content) VALUES (?, ?, ?)",
+        (rowid, section, content),
     )
     db.commit()
     logger.info("Init project=%s section=%s by %s", project, section, author)
 
     return json.dumps(
-        {"status": "updated", "project": project.strip(), "section": section.strip(), "updated_at": now},
+        {"status": "updated", "project": project, "section": section, "updated_at": now},
         ensure_ascii=False,
     )
 
