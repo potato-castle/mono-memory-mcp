@@ -14,6 +14,42 @@ A lightweight, self-hosted [MCP](https://modelcontextprotocol.io/) server that g
 
 Mono Memory gives your team's AI assistants a **shared, persistent memory** backed by a single SQLite file. Any AI can save and retrieve observations, project context, and decisions — across sessions, across team members.
 
+## How It Works
+
+```
+Session 1 (Alice — morning)
+├─ AI discovers a tricky bug in auth logic
+├─ → memory_save: "JWT refresh token race condition fix — added mutex lock"
+└─ Session ends. AI forgets everything.
+
+Session 2 (Bob — afternoon)
+├─ AI starts working on auth-related feature
+├─ → memory_search: "auth"
+├─ ← Gets Alice's bug fix context instantly
+└─ Avoids the same pitfall, builds on her solution.
+
+Session 3 (Alice — next day)
+├─ → memory_timeline: project="my-app", since="2025-03-01"
+└─ ← Sees everything the team's AIs learned this week.
+```
+
+Every observation is stored in a shared SQLite database. Any team member's AI can save and query it through 6 MCP tools.
+
+## Use Cases
+
+### Solo Developer
+- **Session continuity** — Your AI remembers yesterday's debugging insights, architectural decisions, and TODO notes without you copy-pasting context.
+- **Project context** — Store your project's architecture, conventions, and API specs once. Your AI loads them on demand instead of re-reading files every session.
+
+### Team (2-10 developers)
+- **Shared knowledge base** — One person's AI discovers a gotcha? Everyone's AI knows about it.
+- **Onboarding** — New team members' AIs instantly access the full history of decisions and patterns.
+- **Cross-project awareness** — Working on the frontend? Search what the backend team's AI learned about the API yesterday.
+
+### Multi-project
+- **Centralized memory** — One server, multiple projects. Search across all or filter by project.
+- **Timeline view** — See the evolution of decisions across your entire organization.
+
 ## Features
 
 - **6 tools** — save, get, search, timeline, init, context
@@ -53,9 +89,11 @@ The server starts on `http://0.0.0.0:8765` using streamable-http transport.
 
 ---
 
-## Connecting from Claude Code
+## Connecting Your AI Editor
 
-Add a `.mcp.json` file to your project root or home directory (`~`):
+### Claude Code
+
+Add to `.mcp.json` in your project root or home directory (`~`):
 
 ```json
 {
@@ -68,7 +106,50 @@ Add a `.mcp.json` file to your project root or home directory (`~`):
 }
 ```
 
-After adding the config, restart Claude Code to connect.
+### Cursor
+
+Add to `.cursor/mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "mono-memory": {
+      "url": "http://<server-ip>:8765/mcp"
+    }
+  }
+}
+```
+
+### Windsurf
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mono-memory": {
+      "serverUrl": "http://<server-ip>:8765/mcp"
+    }
+  }
+}
+```
+
+### VS Code (Copilot)
+
+Add to `.vscode/mcp.json` in your project root:
+
+```json
+{
+  "servers": {
+    "mono-memory": {
+      "type": "http",
+      "url": "http://<server-ip>:8765/mcp"
+    }
+  }
+}
+```
+
+After adding the config, restart your editor to connect.
 
 ---
 
