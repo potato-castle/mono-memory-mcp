@@ -1,6 +1,18 @@
 # Mono Memory MCP
 
-A lightweight, self-hosted [MCP](https://modelcontextprotocol.io/) server for persistent team and project memory. Store observations, decisions, and project context in a local SQLite database and access them from any MCP-compatible client (e.g. Claude Code, Cursor, Windsurf).
+> **One shared brain for every AI on your team — persistent across sessions, searchable, always in sync.**
+
+A lightweight, self-hosted [MCP](https://modelcontextprotocol.io/) server that gives your AI coding assistants long-term memory. Built for teams where multiple people use AI-powered editors (Claude Code, Cursor, Windsurf) and need their AIs to remember past decisions, share discoveries, and stay aligned — without re-explaining everything every session.
+
+## The Problem
+
+- Your AI assistant **forgets everything** when a session ends.
+- Each team member's AI works in isolation — **no shared knowledge**.
+- Critical decisions, bug fixes, and architectural context get lost between sessions.
+
+## The Solution
+
+Mono Memory gives your team's AI assistants a **shared, persistent memory** backed by a single SQLite file. Any AI can save and retrieve observations, project context, and decisions — across sessions, across team members.
 
 ## Features
 
@@ -8,7 +20,7 @@ A lightweight, self-hosted [MCP](https://modelcontextprotocol.io/) server for pe
 - **SQLite storage** — zero-config, WAL mode, single-file database
 - **Streamable HTTP** — network-ready transport for team use
 - **Environment variable config** — host, port, database path
-- **Team-ready** — multiple authors and projects, keyword search, timeline view
+- **Multi-project** — multiple authors and projects, keyword search, timeline view
 
 ---
 
