@@ -1,3 +1,8 @@
+---
+name: setup
+description: Set up Mono Memory MCP server connection and author
+---
+
 # Mono Memory Setup
 
 Set up the Mono Memory MCP server connection.
