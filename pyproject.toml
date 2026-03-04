@@ -5,16 +5,34 @@ description = "A lightweight, self-hosted MCP server for persistent team/project
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-keywords = ["mcp", "memory", "context", "team", "knowledge-base", "sqlite"]
+keywords = ["mcp", "memory", "context", "team", "knowledge-base", "sqlite", "model-context-protocol"]
+authors = [
+    { name = "potato-castle" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
 dependencies = [
     "mcp[cli]>=1.2.0",
     "httpx>=0.27.0",
 ]
 
+[project.scripts]
+mono-memory-mcp = "server:main"
+
 [project.urls]
 Homepage = "https://github.com/potato-castle/mono-memory-mcp"
 Repository = "https://github.com/potato-castle/mono-memory-mcp"
 Issues = "https://github.com/potato-castle/mono-memory-mcp/issues"
+Documentation = "https://github.com/potato-castle/mono-memory-mcp#readme"
 
 [build-system]
 requires = ["hatchling"]

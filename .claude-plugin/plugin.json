@@ -1,0 +1,21 @@
+{
+  "name": "mono-memory-mcp",
+  "version": "0.1.0",
+  "description": "Persistent team memory for AI coding assistants — save, search, and share observations across sessions with a local SQLite database",
+  "author": {
+    "name": "potato-castle",
+    "url": "https://github.com/potato-castle"
+  },
+  "homepage": "https://github.com/potato-castle/mono-memory-mcp",
+  "repository": "https://github.com/potato-castle/mono-memory-mcp",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "memory",
+    "team",
+    "knowledge-base",
+    "sqlite",
+    "context",
+    "observations"
+  ]
+}
