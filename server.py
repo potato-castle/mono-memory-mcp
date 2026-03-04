@@ -157,6 +157,9 @@ async def memory_save(
         (obs_id, author, project, content, tags, now, now),
     )
     # Sync FTS index
+    # NOTE: If a delete feature is added in the future,
+    # the corresponding FTS delete must also be performed:
+    # db.execute("INSERT INTO observations_fts(observations_fts, rowid, content, tags) VALUES('delete', ?, ?, ?)", ...)
     db.execute(
         "INSERT INTO observations_fts(rowid, content, tags) VALUES (?, ?, ?)",
         (cursor.lastrowid, content, tags),
@@ -256,6 +259,10 @@ async def memory_search(
         [_row_to_dict(r) for r in obs_rows] + [_row_to_dict(r) for r in ctx_rows],
         key=lambda r: r.get("rank", 0),
     )[:limit]
+
+    # Remove internal ranking score from response
+    for r in results:
+        r.pop("rank", None)
 
     return json.dumps({"count": len(results), "results": results}, ensure_ascii=False)
 
