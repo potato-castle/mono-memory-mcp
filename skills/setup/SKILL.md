@@ -7,18 +7,29 @@ description: Set up Mono Memory MCP server connection and author
 
 Set up the Mono Memory MCP server connection.
 
+## Important
+
+- Do NOT use AskUserQuestion tool. Do NOT present selection options or default values.
+- Instead, output a plain text question and wait for the user to type their answer.
+
 ## Steps
 
-1. Ask: "What is your memory server URL? (e.g. http://192.168.0.10:8765/mcp)"
-2. Ask: "What name should be used as your author? (e.g. alice, bob)"
+1. Print this message and wait for the user's reply:
+   ```
+   Enter your memory server URL (e.g. http://192.168.0.10:8765/mcp):
+   ```
+2. After receiving the server URL, print this message and wait for the user's reply:
+   ```
+   Enter your author name:
+   ```
 3. Read `~/.mcp.json` (create if not exists)
-4. Add or update the `mono-memory` server entry:
+4. Add or update the `mono-memory` server entry using the URL the user typed:
    ```json
    {
      "mcpServers": {
        "mono-memory": {
          "type": "streamable-http",
-         "url": "<user's server URL>"
+         "url": "<the URL user typed>"
        }
      }
    }
