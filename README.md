@@ -246,9 +246,18 @@ By default: `./data/memory.db` (SQLite, WAL mode)
 
 ---
 
-## CLAUDE.md Integration
+## CLAUDE.md Integration (Important)
 
-To have Claude Code automatically record observations during work sessions, add the template from [`CLAUDE_MD_TEMPLATE.md`](CLAUDE_MD_TEMPLATE.md) to your project's `CLAUDE.md`.
+For the memory server to be truly useful, each developer needs to add recording instructions to their project's `CLAUDE.md`. Without this, the AI won't automatically save observations.
+
+1. Copy the contents of [`CLAUDE_MD_TEMPLATE.md`](CLAUDE_MD_TEMPLATE.md) into your project's `CLAUDE.md`
+2. Replace `{PROJECT_NAME}` with your project name
+3. Replace `{AUTHOR_NAME}` with your name
+
+This tells your AI assistant to:
+- Automatically save bugs, decisions, and discoveries to the shared memory
+- Search existing memories at the start of each session
+- Write all observations in English for team consistency
 
 ---
 
