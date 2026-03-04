@@ -6,7 +6,7 @@ A lightweight, self-hosted [MCP](https://modelcontextprotocol.io/) server for pe
 
 - **6 tools** — save, get, search, timeline, init, context
 - **SQLite storage** — zero-config, WAL mode, single-file database
-- **3 transports** — stdio, SSE, streamable-http
+- **Streamable HTTP** — network-ready transport for team use
 - **Environment variable config** — host, port, database path
 - **Team-ready** — multiple authors and projects, keyword search, timeline view
 
@@ -27,15 +27,7 @@ cd mono-memory-mcp
 uv run python server.py
 ```
 
-The server starts on `http://0.0.0.0:8765` with streamable-http transport by default.
-
-### Transport Options
-
-```bash
-uv run python server.py              # streamable-http (default)
-uv run python server.py --sse        # SSE
-uv run python server.py --stdio      # stdio (for local MCP clients)
-```
+The server starts on `http://0.0.0.0:8765` using streamable-http transport.
 
 ---
 
@@ -43,40 +35,12 @@ uv run python server.py --stdio      # stdio (for local MCP clients)
 
 Add a `.mcp.json` file to your project root or home directory (`~`):
 
-### Option 1: stdio (local, recommended for single-user)
-
-```json
-{
-  "mcpServers": {
-    "mono-memory": {
-      "command": "uv",
-      "args": ["--directory", "/path/to/mono-memory-mcp", "run", "python", "server.py", "--stdio"]
-    }
-  }
-}
-```
-
-### Option 2: streamable-http (network, recommended for teams)
-
 ```json
 {
   "mcpServers": {
     "mono-memory": {
       "type": "streamable-http",
       "url": "http://<server-ip>:8765/mcp"
-    }
-  }
-}
-```
-
-### Option 3: SSE (legacy network transport)
-
-```json
-{
-  "mcpServers": {
-    "mono-memory": {
-      "type": "sse",
-      "url": "http://<server-ip>:8765/sse"
     }
   }
 }
@@ -163,7 +127,7 @@ cd mono-memory-mcp
 uv run python test_server.py
 ```
 
-The test script spawns the server in stdio mode with an isolated temporary database and verifies all 6 tools.
+The test script spawns the server with an isolated temporary database and verifies all 6 tools via streamable-http.
 
 ---
 
