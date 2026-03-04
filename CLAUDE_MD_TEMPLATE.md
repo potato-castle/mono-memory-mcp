@@ -32,7 +32,7 @@ When any of the following occur during work, **always** record them with `memory
 When calling memory_save:
 - author: "{AUTHOR_NAME}"
 - project: "{PROJECT_NAME}"
-- content: Describe specifically what was discovered/decided/resolved
+- content: Always write in English, regardless of the conversation language. Describe specifically what was discovered/decided/resolved.
 - tags: relevant,comma,separated
 
 ### Tag Guide
