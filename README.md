@@ -14,6 +14,8 @@ A lightweight, self-hosted [MCP](https://modelcontextprotocol.io/) server that g
 
 Mono Memory gives your team's AI assistants a **shared, persistent memory** backed by a single SQLite file. Any AI can save and retrieve observations, project context, and decisions — across sessions, across team members.
 
+> **Why "Mono"?** — Like a monorepo manages all code in one place, Mono Memory manages all your team's AI knowledge in one server.
+
 ## How It Works
 
 ```
