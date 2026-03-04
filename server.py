@@ -8,6 +8,7 @@ local SQLite database and exposes them as MCP tools.
 Supports stdio, SSE, and streamable-http transports.
 """
 
+import argparse
 import json
 import logging
 import os
@@ -24,6 +25,7 @@ DB_DIR = Path(os.environ.get("MONO_MEMORY_DB_DIR", Path(__file__).parent / "data
 DB_PATH = DB_DIR / "memory.db"
 HOST = os.environ.get("MONO_MEMORY_HOST", "0.0.0.0")
 PORT = int(os.environ.get("MONO_MEMORY_PORT", "8765"))
+DEFAULT_AUTHOR = os.environ.get("DEFAULT_AUTHOR", "")
 
 # stdout is reserved for MCP JSON-RPC — all logging goes to stderr
 logging.basicConfig(
@@ -95,21 +97,22 @@ def _now_iso() -> str:
 mcp = FastMCP("mono-memory", host=HOST, port=PORT)
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": False})
 async def memory_save(
-    author: str,
     project: str,
     content: str,
+    author: str = "",
     tags: str = "",
 ) -> str:
     """Save an observation or piece of knowledge to the shared memory.
 
     Args:
-        author: Name of the person recording (e.g. "alice", "bob")
         project: Project name (e.g. "my-app", "backend-api")
         content: The observation, decision, discovery, or knowledge to store
+        author: Name of the person recording (e.g. "alice", "bob"). Uses DEFAULT_AUTHOR env if omitted.
         tags: Comma-separated tags for categorization (e.g. "bug,fix,api")
     """
+    resolved_author = author.strip() or DEFAULT_AUTHOR or "anonymous"
     db = _get_db()
     obs_id = str(uuid.uuid4())
     now = _now_iso()
@@ -117,15 +120,15 @@ async def memory_save(
     db.execute(
         """INSERT INTO observations (id, author, project, content, tags, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (obs_id, author.strip(), project.strip(), content.strip(), tags.strip(), now, now),
+        (obs_id, resolved_author, project.strip(), content.strip(), tags.strip(), now, now),
     )
     db.commit()
-    logger.info("Saved observation %s by %s", obs_id, author)
+    logger.info("Saved observation %s by %s", obs_id, resolved_author)
 
-    return json.dumps({"status": "saved", "id": obs_id, "created_at": now}, ensure_ascii=False)
+    return json.dumps({"status": "saved", "id": obs_id, "author": resolved_author, "created_at": now}, ensure_ascii=False)
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": True})
 async def memory_get(id: str) -> str:
     """Retrieve a specific observation by its ID.
 
@@ -144,7 +147,7 @@ async def memory_get(id: str) -> str:
     return json.dumps(_row_to_dict(row), ensure_ascii=False)
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": True})
 async def memory_search(
     query: str,
     author: str = "",
@@ -200,7 +203,7 @@ async def memory_search(
     return json.dumps({"count": len(results), "results": results}, ensure_ascii=False)
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": True})
 async def memory_timeline(
     project: str = "",
     author: str = "",
@@ -256,7 +259,7 @@ async def memory_timeline(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": True})
 async def memory_init(
     project: str,
     section: str,
@@ -295,7 +298,7 @@ async def memory_init(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": True})
 async def memory_context(
     project: str,
     section: str = "",
@@ -339,7 +342,25 @@ async def memory_context(
 
 
 # === Entry Point ===
+def main():
+    """Entry point for console_scripts and Desktop Extension."""
+    parser = argparse.ArgumentParser(description="Mono Memory MCP Server")
+    parser.add_argument(
+        "--transport",
+        choices=["streamable-http", "stdio"],
+        default="streamable-http",
+        help="MCP transport mode (default: streamable-http)",
+    )
+    args = parser.parse_args()
+
+    if args.transport == "stdio":
+        logger.info("Starting mono-memory MCP server (stdio)")
+        mcp.run(transport="stdio")
+    else:
+        logger.info("Starting mono-memory MCP server (streamable-http)")
+        logger.info("Listening on http://%s:%s", HOST, PORT)
+        mcp.run(transport="streamable-http")
+
+
 if __name__ == "__main__":
-    logger.info("Starting mono-memory MCP server (streamable-http)")
-    logger.info("Listening on http://%s:%s", HOST, PORT)
-    mcp.run(transport="streamable-http")
+    main()

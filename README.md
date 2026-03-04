@@ -26,12 +26,22 @@ Mono Memory gives your team's AI assistants a **shared, persistent memory** back
 
 ## Quick Start
 
-### Prerequisites
+### Option 1: Claude Code Plugin (Recommended)
 
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+```
+/plugin marketplace add potato-castle/mono-memory-mcp
+/plugin install mono-memory-mcp@mono-memory-mcp
+```
 
-### Install & Run
+MCP server is auto-connected after install. Restart Claude Code to activate.
+
+### Option 2: One-line Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/potato-castle/mono-memory-mcp/main/install.sh | bash
+```
+
+### Option 3: Manual Setup
 
 ```bash
 git clone https://github.com/potato-castle/mono-memory-mcp.git
@@ -122,6 +132,67 @@ Store project information by section. Same project+section overwrites (upsert).
 
 ---
 
+## Install from PyPI
+
+```bash
+pip install mono-memory-mcp
+mono-memory-mcp
+```
+
+Or with a specific transport:
+
+```bash
+mono-memory-mcp --transport stdio
+```
+
+---
+
+## Usage Examples
+
+### Example 1: Save a debugging discovery
+
+```
+User: "Save that the login timeout was caused by Redis connection pool exhaustion."
+
+Tool: memory_save
+  project: "auth-service"
+  content: "Login timeout root cause: Redis connection pool exhaustion under load. Fix: increased pool size from 10 to 50 and added retry logic in auth/session.py"
+  tags: "bug,fix,redis,performance"
+
+Response: {"status": "saved", "id": "a1b2c3d4-...", "author": "alice", "created_at": "2025-06-15T10:30:00+09:00"}
+```
+
+### Example 2: Search for past decisions
+
+```
+User: "What do we know about Redis in auth-service?"
+
+Tool: memory_search
+  query: "redis"
+  project: "auth-service"
+
+Response: {"count": 2, "results": [
+  {"author": "alice", "content": "Login timeout root cause: Redis connection pool...", "source": "observation"},
+  {"author": "bob", "content": "Migrated Redis from 6.x to 7.x for ACL support...", "source": "observation"}
+]}
+```
+
+### Example 3: Initialize project context
+
+```
+User: "Set up the architecture overview for the payments project."
+
+Tool: memory_init
+  project: "payments"
+  section: "architecture"
+  content: "Microservice arch. Gateway (Express) -> Payment Service (FastAPI) -> Stripe API. PostgreSQL for transactions, Redis for idempotency keys."
+  author: "carol"
+
+Response: {"status": "updated", "project": "payments", "section": "architecture", "updated_at": "2025-06-15T14:00:00+09:00"}
+```
+
+---
+
 ## Environment Variables
 
 | Variable | Default | Description |
@@ -129,6 +200,7 @@ Store project information by section. Same project+section overwrites (upsert).
 | `MONO_MEMORY_HOST` | `0.0.0.0` | Server bind address |
 | `MONO_MEMORY_PORT` | `8765` | Server port |
 | `MONO_MEMORY_DB_DIR` | `./data` | Directory for the SQLite database |
+| `DEFAULT_AUTHOR` | _(empty)_ | Default author name for `memory_save` |
 
 ---
 
@@ -166,6 +238,22 @@ By default: `./data/memory.db` (SQLite, WAL mode)
 ## CLAUDE.md Integration
 
 To have Claude Code automatically record observations during work sessions, add the template from [`CLAUDE_MD_TEMPLATE.md`](CLAUDE_MD_TEMPLATE.md) to your project's `CLAUDE.md`.
+
+---
+
+## Privacy Policy
+
+Mono Memory MCP is a fully self-hosted, local server.
+
+- **No data leaves your machine**: All data is stored in a local SQLite file.
+- **No telemetry**: The server does not collect, transmit, or share any usage data.
+- **No external network calls**: The server does not make any outbound HTTP requests.
+- **No authentication data**: The server does not handle credentials or tokens for third-party services.
+- **Data retention**: Data persists in the SQLite database until you manually delete it.
+
+Your memory data is entirely under your control.
+
+<!-- mcp-name: io.github.potato-castle/mono-memory-mcp -->
 
 ---
 

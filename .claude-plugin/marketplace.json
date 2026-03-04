@@ -1,0 +1,42 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "mono-memory-mcp",
+  "description": "Persistent team memory for AI coding assistants — save, search, and share observations across sessions",
+  "owner": {
+    "name": "potato-castle"
+  },
+  "metadata": {
+    "description": "Shared persistent memory backed by SQLite for AI coding assistants"
+  },
+  "plugins": [
+    {
+      "name": "mono-memory-mcp",
+      "source": "./",
+      "description": "6 MCP tools for team memory — save observations, search knowledge, track timelines, and manage project context across sessions and team members",
+      "version": "0.1.0",
+      "author": {
+        "name": "potato-castle"
+      },
+      "homepage": "https://github.com/potato-castle/mono-memory-mcp",
+      "repository": "https://github.com/potato-castle/mono-memory-mcp",
+      "license": "MIT",
+      "keywords": [
+        "mcp",
+        "memory",
+        "team",
+        "knowledge-base",
+        "sqlite"
+      ],
+      "category": "workflow",
+      "tags": [
+        "memory",
+        "team",
+        "knowledge",
+        "mcp",
+        "sqlite",
+        "context"
+      ],
+      "strict": false
+    }
+  ]
+}
