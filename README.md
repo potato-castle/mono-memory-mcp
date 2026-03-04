@@ -22,7 +22,7 @@ A lightweight, self-hosted [MCP](https://modelcontextprotocol.io/) server for pe
 ### Install & Run
 
 ```bash
-git clone https://github.com/chul0061/mono-memory-mcp.git
+git clone https://github.com/potato-castle/mono-memory-mcp.git
 cd mono-memory-mcp
 uv run python server.py
 ```

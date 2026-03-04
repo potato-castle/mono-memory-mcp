@@ -12,9 +12,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/chul0061/mono-memory-mcp"
-Repository = "https://github.com/chul0061/mono-memory-mcp"
-Issues = "https://github.com/chul0061/mono-memory-mcp/issues"
+Homepage = "https://github.com/potato-castle/mono-memory-mcp"
+Repository = "https://github.com/potato-castle/mono-memory-mcp"
+Issues = "https://github.com/potato-castle/mono-memory-mcp/issues"
 
 [build-system]
 requires = ["hatchling"]
