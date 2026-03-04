@@ -340,12 +340,6 @@ async def memory_context(
 
 # === Entry Point ===
 if __name__ == "__main__":
-    transport = "streamable-http"
-    if "--stdio" in sys.argv:
-        transport = "stdio"
-    elif "--sse" in sys.argv:
-        transport = "sse"
-    logger.info("Starting mono-memory MCP server (%s)", transport)
-    if transport in ("sse", "streamable-http"):
-        logger.info("Listening on http://%s:%s", HOST, PORT)
-    mcp.run(transport=transport)
+    logger.info("Starting mono-memory MCP server (streamable-http)")
+    logger.info("Listening on http://%s:%s", HOST, PORT)
+    mcp.run(transport="streamable-http")

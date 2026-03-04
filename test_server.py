@@ -8,11 +8,18 @@ import asyncio
 import json
 import os
 import shutil
+import signal
+import subprocess
+import sys
 import tempfile
+import time
 from pathlib import Path
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+
+
+TEST_PORT = 9876
 
 
 async def main():
@@ -22,91 +29,115 @@ async def main():
 
     project_dir = str(Path(__file__).parent)
 
-    # Use a temporary directory for the database to isolate tests
     with tempfile.TemporaryDirectory() as tmp_dir:
-        env = {**os.environ, "MONO_MEMORY_DB_DIR": tmp_dir}
+        env = {
+            **os.environ,
+            "MONO_MEMORY_DB_DIR": tmp_dir,
+            "MONO_MEMORY_PORT": str(TEST_PORT),
+        }
 
-        server_params = StdioServerParameters(
-            command=uv_path,
-            args=["--directory", project_dir, "run", "python", "server.py", "--stdio"],
+        # Start the server as a background process
+        server = subprocess.Popen(
+            [uv_path, "--directory", project_dir, "run", "python", "server.py"],
             env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
 
-        async with stdio_client(server_params) as (read, write):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
+        try:
+            # Wait for server to be ready
+            url = f"http://localhost:{TEST_PORT}/mcp"
+            import socket
+            for _ in range(50):
+                try:
+                    sock = socket.create_connection(("localhost", TEST_PORT), timeout=1)
+                    sock.close()
+                    break
+                except OSError:
+                    await asyncio.sleep(0.2)
+            else:
+                stderr = server.stderr.read().decode() if server.stderr else ""
+                raise RuntimeError(f"Server did not start in time. stderr: {stderr}")
 
-                # 1. Verify tool list
-                tools = await session.list_tools()
-                tool_names = [t.name for t in tools.tools]
-                print(f"[OK] Registered tools: {tool_names}")
-                assert set(tool_names) == {
-                    "memory_save", "memory_get", "memory_search",
-                    "memory_timeline", "memory_init", "memory_context",
-                }
+            async with streamablehttp_client(url) as (read, write, _):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
 
-                # 2. Test memory_save
-                result = await session.call_tool("memory_save", {
-                    "author": "test",
-                    "project": "test-project",
-                    "content": "Test observation: confirmed code generation pattern",
-                    "tags": "test,pattern",
-                })
-                save_data = json.loads(result.content[0].text)
-                obs_id = save_data["id"]
-                print(f"[OK] memory_save: id={obs_id}")
+                    # 1. Verify tool list
+                    tools = await session.list_tools()
+                    tool_names = [t.name for t in tools.tools]
+                    print(f"[OK] Registered tools: {tool_names}")
+                    assert set(tool_names) == {
+                        "memory_save", "memory_get", "memory_search",
+                        "memory_timeline", "memory_init", "memory_context",
+                    }
 
-                # 3. Test memory_get
-                result = await session.call_tool("memory_get", {"id": obs_id})
-                get_data = json.loads(result.content[0].text)
-                assert get_data["author"] == "test"
-                assert get_data["project"] == "test-project"
-                print(f"[OK] memory_get: author={get_data['author']}, project={get_data['project']}")
+                    # 2. Test memory_save
+                    result = await session.call_tool("memory_save", {
+                        "author": "test",
+                        "project": "test-project",
+                        "content": "Test observation: confirmed code generation pattern",
+                        "tags": "test,pattern",
+                    })
+                    save_data = json.loads(result.content[0].text)
+                    obs_id = save_data["id"]
+                    print(f"[OK] memory_save: id={obs_id}")
 
-                # 4. Test memory_search
-                result = await session.call_tool("memory_search", {
-                    "query": "pattern",
-                    "project": "test-project",
-                })
-                search_data = json.loads(result.content[0].text)
-                assert search_data["count"] >= 1
-                print(f"[OK] memory_search: {search_data['count']} result(s) found")
+                    # 3. Test memory_get
+                    result = await session.call_tool("memory_get", {"id": obs_id})
+                    get_data = json.loads(result.content[0].text)
+                    assert get_data["author"] == "test"
+                    assert get_data["project"] == "test-project"
+                    print(f"[OK] memory_get: author={get_data['author']}, project={get_data['project']}")
 
-                # 5. Test memory_timeline
-                result = await session.call_tool("memory_timeline", {
-                    "project": "test-project",
-                    "limit": 10,
-                })
-                timeline_data = json.loads(result.content[0].text)
-                assert timeline_data["count"] >= 1
-                print(f"[OK] memory_timeline: {timeline_data['count']} entry(ies) retrieved")
+                    # 4. Test memory_search
+                    result = await session.call_tool("memory_search", {
+                        "query": "pattern",
+                        "project": "test-project",
+                    })
+                    search_data = json.loads(result.content[0].text)
+                    assert search_data["count"] >= 1
+                    print(f"[OK] memory_search: {search_data['count']} result(s) found")
 
-                # 6. Test memory_init
-                result = await session.call_tool("memory_init", {
-                    "project": "test-project",
-                    "section": "overview",
-                    "content": "A test project for verifying the memory server",
-                    "author": "test",
-                })
-                init_data = json.loads(result.content[0].text)
-                assert init_data["status"] == "updated"
-                print(f"[OK] memory_init: section={init_data['section']}")
+                    # 5. Test memory_timeline
+                    result = await session.call_tool("memory_timeline", {
+                        "project": "test-project",
+                        "limit": 10,
+                    })
+                    timeline_data = json.loads(result.content[0].text)
+                    assert timeline_data["count"] >= 1
+                    print(f"[OK] memory_timeline: {timeline_data['count']} entry(ies) retrieved")
 
-                # 7. Test memory_context
-                result = await session.call_tool("memory_context", {
-                    "project": "test-project",
-                })
-                ctx_data = json.loads(result.content[0].text)
-                assert len(ctx_data["sections"]) >= 1
-                print(f"[OK] memory_context: {len(ctx_data['sections'])} section(s)")
+                    # 6. Test memory_init
+                    result = await session.call_tool("memory_init", {
+                        "project": "test-project",
+                        "section": "overview",
+                        "content": "A test project for verifying the memory server",
+                        "author": "test",
+                    })
+                    init_data = json.loads(result.content[0].text)
+                    assert init_data["status"] == "updated"
+                    print(f"[OK] memory_init: section={init_data['section']}")
 
-                # 8. Test memory_get with nonexistent ID
-                result = await session.call_tool("memory_get", {"id": "nonexistent-id"})
-                not_found = json.loads(result.content[0].text)
-                assert not_found.get("error") == "not_found"
-                print("[OK] memory_get (not found): error handling works")
+                    # 7. Test memory_context
+                    result = await session.call_tool("memory_context", {
+                        "project": "test-project",
+                    })
+                    ctx_data = json.loads(result.content[0].text)
+                    assert len(ctx_data["sections"]) >= 1
+                    print(f"[OK] memory_context: {len(ctx_data['sections'])} section(s)")
 
-                print("\n=== All tests passed! ===")
+                    # 8. Test memory_get with nonexistent ID
+                    result = await session.call_tool("memory_get", {"id": "nonexistent-id"})
+                    not_found = json.loads(result.content[0].text)
+                    assert not_found.get("error") == "not_found"
+                    print("[OK] memory_get (not found): error handling works")
+
+                    print("\n=== All tests passed! ===")
+
+        finally:
+            server.send_signal(signal.SIGTERM)
+            server.wait(timeout=5)
 
 
 if __name__ == "__main__":
