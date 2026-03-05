@@ -34,31 +34,25 @@ fi
 # Write to ~/.mcp.json
 MCP_CONFIG="$HOME/.mcp.json"
 
-if [ -f "$MCP_CONFIG" ]; then
-  python3 -c "
-import json
-with open('$MCP_CONFIG') as f:
-    config = json.load(f)
+SERVER_URL="$SERVER_URL" MCP_CONFIG="$MCP_CONFIG" python3 -c "
+import json, os, sys
+url = os.environ['SERVER_URL']
+path = os.environ['MCP_CONFIG']
+if not url.startswith(('http://', 'https://')):
+    print('Error: URL must start with http:// or https://')
+    sys.exit(1)
+config = {}
+if os.path.exists(path):
+    with open(path) as f:
+        config = json.load(f)
 config.setdefault('mcpServers', {})
 config['mcpServers']['mono-memory'] = {
-    'type': 'streamable-http',
-    'url': '$SERVER_URL'
+    'type': 'http',
+    'url': url
 }
-with open('$MCP_CONFIG', 'w') as f:
+with open(path, 'w') as f:
     json.dump(config, f, indent=2)
 "
-else
-  cat > "$MCP_CONFIG" << MCPEOF
-{
-  "mcpServers": {
-    "mono-memory": {
-      "type": "streamable-http",
-      "url": "$SERVER_URL"
-    }
-  }
-}
-MCPEOF
-fi
 
 echo ""
 echo "==================================="

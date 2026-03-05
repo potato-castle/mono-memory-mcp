@@ -64,94 +64,60 @@ Every observation is stored in a shared SQLite database. Any team member's AI ca
 
 ## Quick Start
 
-### Option 1: Claude Code Plugin (Recommended)
+There are two roles: **Host** (runs the server) and **Client** (connects via plugin).
+
+### Host: Start the Server
+
+The host is the person (or machine) that runs the Mono Memory server for the team.
+
+```bash
+git clone https://github.com/potato-castle/mono-memory-mcp.git
+cd mono-memory-mcp
+pip install -r requirements.txt
+python server.py
+```
+
+The server starts on `http://0.0.0.0:8765/mcp` (streamable-http). Share this URL with your team — replace `0.0.0.0` with your machine's IP address (e.g. `http://192.168.0.10:8765/mcp`).
+
+**Custom configuration:**
+
+```bash
+# Change port
+MONO_MEMORY_PORT=9000 python server.py
+
+# Change database directory
+MONO_MEMORY_DB_DIR=/path/to/data python server.py
+
+# Run in background
+nohup python server.py > /tmp/mono-memory.log 2>&1 &
+```
+
+### Client: Install the Plugin (Claude Code)
+
+Clients do **not** need to clone the repo. Just install the plugin in Claude Code:
 
 ```
 /plugin marketplace add potato-castle/mono-memory-mcp
 /plugin install mono-memory-mcp@mono-memory-mcp
 ```
 
-MCP server is auto-connected after install. Restart Claude Code to activate.
+Then run the setup skill to connect to your team's server:
 
-### Option 2: One-line Install
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/potato-castle/mono-memory-mcp/main/install.sh | bash
+```
+/mono-memory-mcp:setup
 ```
 
-### Option 3: Manual Setup
+This will prompt you for:
+1. **Server URL** — the host's server address (e.g. `http://192.168.0.10:8765/mcp`)
+2. **Author name** — your name, used to tag memories you save
 
-```bash
-git clone https://github.com/potato-castle/mono-memory-mcp.git
-cd mono-memory-mcp
-uv run python server.py
-```
+The project name is automatically detected from your current directory name.
 
-The server starts on `http://0.0.0.0:8765` using streamable-http transport.
+The setup will:
+- Write `.mcp.json` in your project root (MCP server connection)
+- Append auto-recording rules to `CLAUDE.md` (so your AI automatically saves discoveries)
 
----
-
-## Connecting Your AI Editor
-
-### Claude Code
-
-Add to `.mcp.json` in your project root or home directory (`~`):
-
-```json
-{
-  "mcpServers": {
-    "mono-memory": {
-      "type": "streamable-http",
-      "url": "http://<server-ip>:8765/mcp"
-    }
-  }
-}
-```
-
-### Cursor
-
-Add to `.cursor/mcp.json` in your project root:
-
-```json
-{
-  "mcpServers": {
-    "mono-memory": {
-      "url": "http://<server-ip>:8765/mcp"
-    }
-  }
-}
-```
-
-### Windsurf
-
-Add to `~/.codeium/windsurf/mcp_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "mono-memory": {
-      "serverUrl": "http://<server-ip>:8765/mcp"
-    }
-  }
-}
-```
-
-### VS Code (Copilot)
-
-Add to `.vscode/mcp.json` in your project root:
-
-```json
-{
-  "servers": {
-    "mono-memory": {
-      "type": "http",
-      "url": "http://<server-ip>:8765/mcp"
-    }
-  }
-}
-```
-
-After adding the config, restart your editor to connect.
+Restart Claude Code to activate.
 
 ---
 
@@ -212,21 +178,6 @@ Store project information by section. Same project+section overwrites (upsert).
 |-----------|----------|-------------|
 | `project` | Yes | Project name |
 | `section` | No | Section name (omit to list all sections) |
-
----
-
-## Install from PyPI
-
-```bash
-pip install mono-memory-mcp
-mono-memory-mcp
-```
-
-Or with a specific transport:
-
-```bash
-mono-memory-mcp --transport stdio
-```
 
 ---
 
@@ -298,15 +249,9 @@ The test script spawns the server with an isolated temporary database and verifi
 
 ---
 
-## Deployment
+## Server Management
 
-### Background process
-
-```bash
-nohup uv run python server.py > /tmp/mono-memory.log 2>&1 &
-```
-
-### Stop
+### Stop the server
 
 ```bash
 lsof -ti:8765 | xargs kill
@@ -318,18 +263,14 @@ By default: `./data/memory.db` (SQLite, WAL mode)
 
 ---
 
-## CLAUDE.md Integration (Important)
+## CLAUDE.md Integration
 
-For the memory server to be truly useful, each developer needs to add recording instructions to their project's `CLAUDE.md`. Without this, the AI won't automatically save observations.
-
-1. Copy the contents of [`CLAUDE_MD_TEMPLATE.md`](CLAUDE_MD_TEMPLATE.md) into your project's `CLAUDE.md`
-2. Replace `{PROJECT_NAME}` with your project name
-3. Replace `{AUTHOR_NAME}` with your name
-
-This tells your AI assistant to:
+The `/mono-memory-mcp:setup` skill automatically appends auto-recording rules to your project's `CLAUDE.md`. This tells your AI assistant to:
 - Automatically save bugs, decisions, and discoveries to the shared memory
 - Search existing memories at the start of each session
 - Write all observations in English for team consistency
+
+For manual setup, see [`CLAUDE_MD_TEMPLATE.md`](CLAUDE_MD_TEMPLATE.md).
 
 ---
 
