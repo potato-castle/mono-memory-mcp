@@ -59,7 +59,7 @@ Set up the Mono Memory MCP server connection and configure CLAUDE.md for auto-re
            config = json.load(f)
    config.setdefault('mcpServers', {})
    config['mcpServers']['mono-memory'] = {
-       'type': 'http',
+       'type': 'streamable-http',
        'url': url
    }
    with open(mcp_path, 'w') as f:
