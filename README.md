@@ -40,15 +40,18 @@ Every observation is stored in a shared SQLite database. Any team member's AI ca
 ## Use Cases
 
 ### Solo Developer
+
 - **Session continuity** — Your AI remembers yesterday's debugging insights, architectural decisions, and TODO notes without you copy-pasting context.
 - **Project context** — Store your project's architecture, conventions, and API specs once. Your AI loads them on demand instead of re-reading files every session.
 
 ### Team (2-10 developers)
+
 - **Shared knowledge base** — One person's AI discovers a gotcha? Everyone's AI knows about it.
 - **Onboarding** — New team members' AIs instantly access the full history of decisions and patterns.
 - **Cross-project awareness** — Working on the frontend? Search what the backend team's AI learned about the API yesterday.
 
 ### Multi-project
+
 - **Centralized memory** — One server, multiple projects. Search across all or filter by project.
 - **Timeline view** — See the evolution of decisions across your entire organization.
 
@@ -93,28 +96,37 @@ nohup python server.py > /tmp/mono-memory.log 2>&1 &
 
 ### Client: Install the Plugin (Claude Code)
 
-Clients do **not** need to clone the repo. Just install the plugin in Claude Code:
+Clients do **not** need to clone the repo. Just run three commands in Claude Code:
+
+**1. Register the marketplace:**
 
 ```
 /plugin marketplace add potato-castle/mono-memory-mcp
+```
+
+**2. Install the plugin:**
+
+```
 /plugin install mono-memory-mcp@mono-memory-mcp
 ```
 
 > When prompted for scope, select **"Install for you, in this repo only (local scope)"**. This keeps the plugin active only in the current project.
 
-Then run the setup skill to connect to your team's server:
+**3. Run the setup skill:**
 
 ```
 /mono-memory-mcp:setup
 ```
 
 This will prompt you for:
+
 1. **Server URL** — the host's server address (e.g. `http://192.168.0.10:8765/mcp`)
 2. **Author name** — your name, used to tag memories you save
 
 The project name is automatically detected from your current directory name.
 
 The setup will:
+
 - Write `.mcp.json` in your project root (MCP server connection)
 - Append auto-recording rules to `CLAUDE.md` (so your AI automatically saves discoveries)
 
@@ -128,57 +140,69 @@ Restart Claude Code to activate.
 
 Store a discovery, decision, debugging insight, or any knowledge.
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `author` | Yes | Author name (e.g. `"alice"`) |
-| `project` | Yes | Project name (e.g. `"my-app"`) |
-| `content` | Yes | The content to save |
-| `tags` | No | Comma-separated tags (e.g. `"bug,fix,api"`) |
+
+| Parameter | Required | Description                                 |
+| --------- | -------- | ------------------------------------------- |
+| `author`  | Yes      | Author name (e.g. `"alice"`)                |
+| `project` | Yes      | Project name (e.g. `"my-app"`)              |
+| `content` | Yes      | The content to save                         |
+| `tags`    | No       | Comma-separated tags (e.g. `"bug,fix,api"`) |
+
 
 ### `memory_get` — Retrieve by ID
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `id` | Yes | UUID of the observation |
+
+| Parameter | Required | Description             |
+| --------- | -------- | ----------------------- |
+| `id`      | Yes      | UUID of the observation |
+
 
 ### `memory_search` — Keyword search
 
 Searches both observations and project contexts.
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `query` | Yes | Search keywords (space = AND) |
-| `author` | No | Filter by author |
-| `project` | No | Filter by project |
-| `limit` | No | Max results (default 20) |
+
+| Parameter | Required | Description                   |
+| --------- | -------- | ----------------------------- |
+| `query`   | Yes      | Search keywords (space = AND) |
+| `author`  | No       | Filter by author              |
+| `project` | No       | Filter by project             |
+| `limit`   | No       | Max results (default 20)      |
+
 
 ### `memory_timeline` — Chronological view
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `project` | No | Filter by project |
-| `author` | No | Filter by author |
-| `since` | No | Start date (ISO 8601, e.g. `"2025-01-01"`) |
-| `until` | No | End date (ISO 8601, e.g. `"2025-01-31"`) |
-| `limit` | No | Max results (default 50) |
+
+| Parameter | Required | Description                                |
+| --------- | -------- | ------------------------------------------ |
+| `project` | No       | Filter by project                          |
+| `author`  | No       | Filter by author                           |
+| `since`   | No       | Start date (ISO 8601, e.g. `"2025-01-01"`) |
+| `until`   | No       | End date (ISO 8601, e.g. `"2025-01-31"`)   |
+| `limit`   | No       | Max results (default 50)                   |
+
 
 ### `memory_init` — Initialize/update project context
 
 Store project information by section. Same project+section overwrites (upsert).
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `project` | Yes | Project name |
-| `section` | Yes | Section name (e.g. `"overview"`, `"architecture"`, `"api"`) |
-| `content` | Yes | Section content |
-| `author` | No | Who updated it |
+
+| Parameter | Required | Description                                                 |
+| --------- | -------- | ----------------------------------------------------------- |
+| `project` | Yes      | Project name                                                |
+| `section` | Yes      | Section name (e.g. `"overview"`, `"architecture"`, `"api"`) |
+| `content` | Yes      | Section content                                             |
+| `author`  | No       | Who updated it                                              |
+
 
 ### `memory_context` — Retrieve project context
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `project` | Yes | Project name |
-| `section` | No | Section name (omit to list all sections) |
+
+| Parameter | Required | Description                              |
+| --------- | -------- | ---------------------------------------- |
+| `project` | Yes      | Project name                             |
+| `section` | No       | Section name (omit to list all sections) |
+
 
 ---
 
@@ -239,16 +263,17 @@ Generates a Swagger-style HTML API documentation page from memories stored in th
 ```
 
 The skill automatically:
+
 1. Detects your project name from the current directory
 2. Searches all API-related memories (endpoints, schemas, changes)
 3. Generates a self-contained `api-docs.html` with:
-   - Color-coded HTTP method badges (GET, POST, PUT, DELETE, PATCH)
-   - Request/Response code boxes per endpoint
-   - **Try it** panels — test APIs directly from the browser
-   - Path parameter & query parameter input fields (Swagger-style)
-   - Auth type selector (Bearer, JWT, Basic Auth, API Key)
-   - Send button with live response display
-   - Copy as curl button
+  - Color-coded HTTP method badges (GET, POST, PUT, DELETE, PATCH)
+  - Request/Response code boxes per endpoint
+  - **Try it** panels — test APIs directly from the browser
+  - Path parameter & query parameter input fields (Swagger-style)
+  - Auth type selector (Bearer, JWT, Basic Auth, API Key)
+  - Send button with live response display
+  - Copy as curl button
 
 **Prerequisite:** Save some API observations first so the skill has data to work with:
 
@@ -262,12 +287,14 @@ memory_init(project: "my-app", section: "api", content: "REST API base URL: /api
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MONO_MEMORY_HOST` | `0.0.0.0` | Server bind address |
-| `MONO_MEMORY_PORT` | `8765` | Server port |
-| `MONO_MEMORY_DB_DIR` | `./data` | Directory for the SQLite database |
-| `DEFAULT_AUTHOR` | _(empty)_ | Default author name for `memory_save` |
+
+| Variable             | Default   | Description                           |
+| -------------------- | --------- | ------------------------------------- |
+| `MONO_MEMORY_HOST`   | `0.0.0.0` | Server bind address                   |
+| `MONO_MEMORY_PORT`   | `8765`    | Server port                           |
+| `MONO_MEMORY_DB_DIR` | `./data`  | Directory for the SQLite database     |
+| `DEFAULT_AUTHOR`     | *(empty)* | Default author name for `memory_save` |
+
 
 ---
 
@@ -302,11 +329,12 @@ By default: `./data/memory.db` (SQLite, WAL mode)
 ## CLAUDE.md Integration
 
 The `/mono-memory-mcp:setup` skill automatically appends auto-recording rules to your project's `CLAUDE.md`. This tells your AI assistant to:
+
 - Automatically save bugs, decisions, and discoveries to the shared memory
 - Search existing memories at the start of each session
 - Write all observations in English for team consistency
 
-For manual setup, see [`CLAUDE_MD_TEMPLATE.md`](CLAUDE_MD_TEMPLATE.md).
+For manual setup, see `[CLAUDE_MD_TEMPLATE.md](CLAUDE_MD_TEMPLATE.md)`.
 
 ---
 
@@ -322,7 +350,7 @@ Mono Memory MCP is a fully self-hosted, local server.
 
 Your memory data is entirely under your control.
 
-<!-- mcp-name: io.github.potato-castle/mono-memory-mcp -->
+
 
 ---
 
