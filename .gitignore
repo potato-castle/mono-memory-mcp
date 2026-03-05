@@ -8,3 +8,4 @@ logs/
 .claude/
 dist/
 *.mcpb
+.mcp.json
