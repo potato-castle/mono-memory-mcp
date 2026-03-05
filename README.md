@@ -18,7 +18,6 @@ Mono Memory gives your team's AI assistants a **shared, persistent memory** back
 
 ## How It Works
 
-```
 Session 1 (Alice — morning)
 ├─ AI discovers a tricky bug in auth logic
 ├─ → memory_save: "JWT refresh token race condition fix — added mutex lock"
@@ -33,7 +32,6 @@ Session 2 (Bob — afternoon)
 Session 3 (Alice — next day)
 ├─ → memory_timeline: project="my-app", since="2025-03-01"
 └─ ← Sees everything the team's AIs learned this week.
-```
 
 Every observation is stored in a shared SQLite database. Any team member's AI can save and query it through 6 MCP tools.
 
@@ -74,7 +72,6 @@ The host is the person (or machine) that runs the Mono Memory server for the tea
 git clone https://github.com/potato-castle/mono-memory-mcp.git
 cd mono-memory-mcp
 uv run python server.py
-```
 
 The server starts on `http://0.0.0.0:8765/mcp` (streamable-http). Share this URL with your team — replace `0.0.0.0` with your machine's IP address (e.g. `http://192.168.0.10:8765/mcp`).
 
@@ -89,24 +86,19 @@ MONO_MEMORY_DB_DIR=/path/to/data python server.py
 
 # Run in background
 nohup python server.py > /tmp/mono-memory.log 2>&1 &
-```
 
 ### Client: Install the Plugin (Claude Code)
 
 Clients do **not** need to clone the repo. Just install the plugin in Claude Code:
 
-```
 /plugin marketplace add potato-castle/mono-memory-mcp
 /plugin install mono-memory-mcp@mono-memory-mcp
-```
 
 > When prompted for scope, select **"Install for you, in this repo only (local scope)"**. This keeps the plugin active only in the current project.
 
 Then run the setup skill to connect to your team's server:
 
-```
 /mono-memory-mcp:setup
-```
 
 This will prompt you for:
 1. **Server URL** — the host's server address (e.g. `http://192.168.0.10:8765/mcp`)
@@ -186,7 +178,6 @@ Store project information by section. Same project+section overwrites (upsert).
 
 ### Example 1: Save a debugging discovery
 
-```
 User: "Save that the login timeout was caused by Redis connection pool exhaustion."
 
 Tool: memory_save
@@ -195,11 +186,9 @@ Tool: memory_save
   tags: "bug,fix,redis,performance"
 
 Response: {"status": "saved", "id": "a1b2c3d4-...", "author": "alice", "created_at": "2025-06-15T10:30:00+09:00"}
-```
 
 ### Example 2: Search for past decisions
 
-```
 User: "What do we know about Redis in auth-service?"
 
 Tool: memory_search
@@ -210,11 +199,9 @@ Response: {"count": 2, "results": [
   {"author": "alice", "content": "Login timeout root cause: Redis connection pool...", "source": "observation"},
   {"author": "bob", "content": "Migrated Redis from 6.x to 7.x for ACL support...", "source": "observation"}
 ]}
-```
 
 ### Example 3: Initialize project context
 
-```
 User: "Set up the architecture overview for the payments project."
 
 Tool: memory_init
@@ -224,7 +211,6 @@ Tool: memory_init
   author: "carol"
 
 Response: {"status": "updated", "project": "payments", "section": "architecture", "updated_at": "2025-06-15T14:00:00+09:00"}
-```
 
 ---
 
@@ -234,9 +220,7 @@ Response: {"status": "updated", "project": "payments", "section": "architecture"
 
 Generates a Swagger-style HTML API documentation page from memories stored in the mono-memory server.
 
-```
 /api-docs
-```
 
 The skill automatically:
 1. Detects your project name from the current directory
@@ -252,11 +236,9 @@ The skill automatically:
 
 **Prerequisite:** Save some API observations first so the skill has data to work with:
 
-```
 memory_save(project: "my-app", content: "GET /api/users - returns paginated user list with {page} and {limit} query params", tags: "api,endpoint")
 memory_save(project: "my-app", content: "POST /api/users - creates user. Request: {name, email, role}. Response: {id, name, email, created_at}", tags: "api,endpoint")
 memory_init(project: "my-app", section: "api", content: "REST API base URL: /api/v1. Auth: Bearer token required.")
-```
 
 ---
 
@@ -276,7 +258,6 @@ memory_init(project: "my-app", section: "api", content: "REST API base URL: /api
 ```bash
 cd mono-memory-mcp
 uv run python test_server.py
-```
 
 The test script spawns the server with an isolated temporary database and verifies all 6 tools via streamable-http.
 
@@ -284,10 +265,13 @@ The test script spawns the server with an isolated temporary database and verifi
 
 ## Server Management
 
-### Stop the server
+Scripts are provided in the `scripts/` directory:
 
 ```bash
-lsof -ti:8765 | xargs kill
+./scripts/start.sh      # Start the server
+./scripts/stop.sh       # Stop the server
+./scripts/restart.sh    # Restart the server
+./scripts/logs.sh       # Tail server logs in real-time
 ```
 
 ### Database location
