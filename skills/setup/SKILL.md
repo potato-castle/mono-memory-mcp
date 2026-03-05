@@ -98,6 +98,9 @@ Set up the Mono Memory MCP server connection and configure CLAUDE.md for auto-re
    ### Check Project Context
    To review project structure or conventions:
    - memory_context(project: \"{project}\")
+
+   ### Shortcut Commands
+   When the user types \"/api-docs\", run the /mono-memory-mcp:api-docs skill.
    '''.format(author=author, project=project)
 
    existing = ''

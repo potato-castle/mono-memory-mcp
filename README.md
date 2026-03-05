@@ -73,8 +73,7 @@ The host is the person (or machine) that runs the Mono Memory server for the tea
 ```bash
 git clone https://github.com/potato-castle/mono-memory-mcp.git
 cd mono-memory-mcp
-pip install -r requirements.txt
-python server.py
+uv run python server.py
 ```
 
 The server starts on `http://0.0.0.0:8765/mcp` (streamable-http). Share this URL with your team — replace `0.0.0.0` with your machine's IP address (e.g. `http://192.168.0.10:8765/mcp`).
@@ -101,7 +100,7 @@ Clients do **not** need to clone the repo. Just install the plugin in Claude Cod
 /plugin install mono-memory-mcp@mono-memory-mcp
 ```
 
-> When prompted for scope, select **"Install for you (user scope)"**. The actual MCP server connection is only created in projects where you run the setup.
+> When prompted for scope, select **"Install for you, in this repo only (local scope)"**. This keeps the plugin active only in the current project.
 
 Then run the setup skill to connect to your team's server:
 
@@ -225,6 +224,38 @@ Tool: memory_init
   author: "carol"
 
 Response: {"status": "updated", "project": "payments", "section": "architecture", "updated_at": "2025-06-15T14:00:00+09:00"}
+```
+
+---
+
+## Skills
+
+### `/api-docs` — Generate API Documentation
+
+Generates a Swagger-style HTML API documentation page from memories stored in the mono-memory server.
+
+```
+/api-docs
+```
+
+The skill automatically:
+1. Detects your project name from the current directory
+2. Searches all API-related memories (endpoints, schemas, changes)
+3. Generates a self-contained `api-docs.html` with:
+   - Color-coded HTTP method badges (GET, POST, PUT, DELETE, PATCH)
+   - Request/Response code boxes per endpoint
+   - **Try it** panels — test APIs directly from the browser
+   - Path parameter & query parameter input fields (Swagger-style)
+   - Auth type selector (Bearer, JWT, Basic Auth, API Key)
+   - Send button with live response display
+   - Copy as curl button
+
+**Prerequisite:** Save some API observations first so the skill has data to work with:
+
+```
+memory_save(project: "my-app", content: "GET /api/users - returns paginated user list with {page} and {limit} query params", tags: "api,endpoint")
+memory_save(project: "my-app", content: "POST /api/users - creates user. Request: {name, email, role}. Response: {id, name, email, created_at}", tags: "api,endpoint")
+memory_init(project: "my-app", section: "api", content: "REST API base URL: /api/v1. Auth: Bearer token required.")
 ```
 
 ---

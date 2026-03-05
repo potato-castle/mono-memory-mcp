@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Docs — my-app</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>my-app — API Documentation</h1>
+    <p>Generated from team memory on 2026-03-05T10:30:00+09:00</p>
+  </header>
+
+  <div class="server-config">
+    <div class="field" style="flex:2;">
+      <label>Base URL</label>
+      <input type="text" id="baseUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
+    </div>
+    <div class="field" style="flex:3;">
+      <label>Authorization</label>
+      <div class="auth-row">
+        <select id="authType" onchange="onAuthTypeChange()">
+          <option value="bearer">Bearer Token</option>
+          <option value="jwt">JWT Bearer</option>
+          <option value="basic">Basic Auth</option>
+          <option value="apikey">API Key</option>
+          <option value="none">No Auth</option>
+        </select>
+        <input type="text" id="authToken" placeholder="paste token here...">
+      </div>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+      <li><a href="#group-users">Users</a> <span style="font-size:0.78rem;color:#9ca3af">/api/v1/users</span></li>
+      <li><a href="#group-auth">Auth</a> <span style="font-size:0.78rem;color:#9ca3af">/api/v1/auth</span></li>
+    </ul>
+  </div>
+
+  <!-- ===== Users Group ===== -->
+  <div class="section" id="group-users">
+    <h2 onclick="toggleSection(this)"><span class="collapse-icon">▼</span>Users <span style="font-size:0.85rem;font-weight:400;color:#9ca3af;margin-left:0.5rem">/api/v1/users</span></h2>
+    <div class="section-body">
+
+    <!-- GET /api/v1/users -->
+    <div class="entry">
+      <div class="endpoint-header"><span class="badge badge-get">GET</span> <span class="endpoint-path">/api/v1/users</span></div>
+      <div class="endpoint-desc">Returns paginated user list.</div>
+      <div class="req-res">
+        <div class="req-res-box">
+          <span class="label label-req">Request</span>
+          <pre>GET /api/v1/users?page=1&amp;limit=20
+
+Headers:
+  Authorization: Bearer &lt;token&gt;</pre>
+        </div>
+        <div class="req-res-box">
+          <span class="label label-res">Response <span class="status-code status-2xx">200</span></span>
+          <pre>{
+  "total": 142,
+  "page": 1,
+  "users": [
+    { "id": "u_abc123", "name": "Alice", "email": "alice@example.com" }
+  ]
+}</pre>
+        </div>
+      </div>
+      <div class="entry-meta"><span>alice</span><span>2026-02-28</span></div>
+      <div class="try-it">
+        <button class="try-it-toggle" onclick="toggleTryIt(this)">Try it</button>
+        <div class="try-it-panel" data-method="GET" data-path="/api/v1/users">
+          <div class="try-url-display"><span class="method-label">GET</span><span class="url-text"></span></div>
+          <div class="param-section">
+            <div class="param-section-title">Query Parameters</div>
+            <table class="param-table">
+              <thead><tr><th>Name</th><th>Type</th><th></th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td class="param-name">page</td><td class="param-type">integer</td><td></td><td><input type="text" data-param="query" data-key="page" value="1" oninput="updateUrl(this)"></td></tr>
+                <tr><td class="param-name">limit</td><td class="param-type">integer</td><td></td><td><input type="text" data-param="query" data-key="limit" value="20" oninput="updateUrl(this)"></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="try-it-actions">
+            <button class="btn-send" onclick="sendRequest(this)">Send</button>
+            <button class="btn-curl" onclick="copyCurl(this)">Copy as curl</button>
+          </div>
+          <div class="try-it-response">
+            <div class="try-it-response-header">
+              <span class="try-it-response-status" style="background:#bbf7d0;color:#166534">200 OK</span>
+              <span class="try-it-response-time">42ms</span>
+            </div>
+            <div class="try-it-response-body">{
+  "total": 142,
+  "page": 1,
+  "users": [
+    {
+      "id": "u_abc123",
+      "name": "Alice",
+      "email": "alice@example.com",
+      "role": "admin",
+      "created_at": "2026-01-15T09:00:00Z"
+    },
+    {
+      "id": "u_def456",
+      "name": "Bob",
+      "email": "bob@example.com",
+      "role": "member",
+      "created_at": "2026-02-20T14:30:00Z"
+    }
+  ]
+}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POST /api/v1/users -->
+    <div class="entry">
+      <div class="endpoint-header"><span class="badge badge-post">POST</span> <span class="endpoint-path">/api/v1/users</span></div>
+      <div class="endpoint-desc">Create a new user. Validates email uniqueness.</div>
+      <div class="req-res">
+        <div class="req-res-box">
+          <span class="label label-req">Request</span>
+          <pre>POST /api/v1/users
+
+Body:
+{ "name": "Bob", "email": "bob@example.com", "role": "member" }</pre>
+        </div>
+        <div class="req-res-box">
+          <span class="label label-res">Response <span class="status-code status-2xx">201</span></span>
+          <pre>{
+  "id": "u_def456", "name": "Bob",
+  "email": "bob@example.com", "role": "member",
+  "created_at": "2026-03-01T09:00:00Z"
+}</pre>
+          <br>
+          <span class="label label-res">Error <span class="status-code status-4xx">409</span></span>
+          <pre>{ "error": "conflict", "message": "Email already exists" }</pre>
+        </div>
+      </div>
+      <div class="entry-meta"><span>bob</span><span>2026-03-01</span></div>
+      <div class="try-it">
+        <button class="try-it-toggle" onclick="toggleTryIt(this)">Try it</button>
+        <div class="try-it-panel" data-method="POST" data-path="/api/v1/users">
+          <div class="try-url-display"><span class="method-label">POST</span><span class="url-text"></span></div>
+          <div class="body-section">
+            <div class="param-section-title">Request Body</div>
+            <textarea class="try-body">{
+  "name": "Bob",
+  "email": "bob@example.com",
+  "role": "member"
+}</textarea>
+          </div>
+          <div class="try-it-actions">
+            <button class="btn-send" onclick="sendRequest(this)">Send</button>
+            <button class="btn-curl" onclick="copyCurl(this)">Copy as curl</button>
+          </div>
+          <div class="try-it-response"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GET /api/v1/users/:id -->
+    <div class="entry">
+      <div class="endpoint-header"><span class="badge badge-get">GET</span> <span class="endpoint-path">/api/v1/users/:id</span></div>
+      <div class="endpoint-desc">Returns single user by ID. Includes nested profile and permissions.</div>
+      <div class="req-res">
+        <div class="req-res-box">
+          <span class="label label-req">Request</span>
+          <pre>GET /api/v1/users/{id}</pre>
+        </div>
+        <div class="req-res-box">
+          <span class="label label-res">Response <span class="status-code status-2xx">200</span></span>
+          <pre>{
+  "id": "u_abc123", "name": "Alice",
+  "email": "alice@example.com",
+  "profile": { "avatar": "..." },
+  "permissions": ["read", "write"]
+}</pre>
+          <br>
+          <span class="label label-res">Error <span class="status-code status-4xx">404</span></span>
+          <pre>{ "error": "not_found", "message": "User not found" }</pre>
+        </div>
+      </div>
+      <div class="entry-meta"><span>alice</span><span>2026-03-01</span></div>
+      <div class="try-it">
+        <button class="try-it-toggle" onclick="toggleTryIt(this)">Try it</button>
+        <div class="try-it-panel" data-method="GET" data-path="/api/v1/users/{id}">
+          <div class="try-url-display"><span class="method-label">GET</span><span class="url-text"></span></div>
+          <div class="param-section">
+            <div class="param-section-title">Path Parameters</div>
+            <table class="param-table">
+              <thead><tr><th>Name</th><th>Type</th><th></th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td class="param-name">id</td><td class="param-type">string</td><td><span class="param-required">required</span></td><td><input type="text" data-param="path" data-key="id" placeholder="u_abc123" oninput="updateUrl(this)"></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="try-it-actions">
+            <button class="btn-send" onclick="sendRequest(this)">Send</button>
+            <button class="btn-curl" onclick="copyCurl(this)">Copy as curl</button>
+          </div>
+          <div class="try-it-response"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE /api/v1/users/:id -->
+    <div class="entry">
+      <div class="endpoint-header"><span class="badge badge-delete">DELETE</span> <span class="endpoint-path">/api/v1/users/:id</span></div>
+      <div class="endpoint-desc">Soft-delete user. Admin only.</div>
+      <div class="req-res">
+        <div class="req-res-box">
+          <span class="label label-req">Request</span>
+          <pre>DELETE /api/v1/users/{id}
+
+Headers:
+  Authorization: Bearer &lt;token&gt; (admin)</pre>
+        </div>
+        <div class="req-res-box">
+          <span class="label label-res">Response <span class="status-code status-2xx">200</span></span>
+          <pre>{ "id": "u_abc123", "deleted_at": "2026-03-03T14:00:00Z" }</pre>
+        </div>
+      </div>
+      <div class="entry-meta"><span>carol</span><span>2026-03-03</span></div>
+      <div class="try-it">
+        <button class="try-it-toggle" onclick="toggleTryIt(this)">Try it</button>
+        <div class="try-it-panel" data-method="DELETE" data-path="/api/v1/users/{id}">
+          <div class="try-url-display"><span class="method-label">DELETE</span><span class="url-text"></span></div>
+          <div class="param-section">
+            <div class="param-section-title">Path Parameters</div>
+            <table class="param-table">
+              <thead><tr><th>Name</th><th>Type</th><th></th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td class="param-name">id</td><td class="param-type">string</td><td><span class="param-required">required</span></td><td><input type="text" data-param="path" data-key="id" placeholder="u_abc123" oninput="updateUrl(this)"></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="try-it-actions">
+            <button class="btn-send" onclick="sendRequest(this)">Send</button>
+            <button class="btn-curl" onclick="copyCurl(this)">Copy as curl</button>
+          </div>
+          <div class="try-it-response"></div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <!-- ===== Auth Group ===== -->
+  <div class="section" id="group-auth">
+    <h2 onclick="toggleSection(this)"><span class="collapse-icon">▼</span>Auth <span style="font-size:0.85rem;font-weight:400;color:#9ca3af;margin-left:0.5rem">/api/v1/auth</span></h2>
+    <div class="section-body">
+
+    <!-- POST /api/v1/auth/login -->
+    <div class="entry">
+      <div class="endpoint-header"><span class="badge badge-post">POST</span> <span class="endpoint-path">/api/v1/auth/login</span></div>
+      <div class="endpoint-desc">Login with email + password. Rate limited: 5 req/min per IP.</div>
+      <div class="req-res">
+        <div class="req-res-box">
+          <span class="label label-req">Request</span>
+          <pre>POST /api/v1/auth/login
+
+Body:
+{ "email": "alice@example.com", "password": "..." }</pre>
+        </div>
+        <div class="req-res-box">
+          <span class="label label-res">Response <span class="status-code status-2xx">200</span></span>
+          <pre>{
+  "access_token": "eyJhbG...",
+  "refresh_token": "dGhpcyB...",
+  "expires_in": 3600
+}</pre>
+        </div>
+      </div>
+      <div class="entry-meta"><span>alice</span><span>2026-03-02</span></div>
+      <div class="try-it">
+        <button class="try-it-toggle" onclick="toggleTryIt(this)">Try it</button>
+        <div class="try-it-panel" data-method="POST" data-path="/api/v1/auth/login">
+          <div class="try-url-display"><span class="method-label">POST</span><span class="url-text"></span></div>
+          <div class="body-section">
+            <div class="param-section-title">Request Body</div>
+            <textarea class="try-body">{
+  "email": "alice@example.com",
+  "password": ""
+}</textarea>
+          </div>
+          <div class="try-it-actions">
+            <button class="btn-send" onclick="sendRequest(this)">Send</button>
+            <button class="btn-curl" onclick="copyCurl(this)">Copy as curl</button>
+          </div>
+          <div class="try-it-response"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POST /api/v1/auth/refresh -->
+    <div class="entry">
+      <div class="endpoint-header"><span class="badge badge-post">POST</span> <span class="endpoint-path">/api/v1/auth/refresh</span></div>
+      <div class="endpoint-desc">Refresh access token. Old refresh token is invalidated (rotation).</div>
+      <div class="req-res">
+        <div class="req-res-box">
+          <span class="label label-req">Request</span>
+          <pre>POST /api/v1/auth/refresh
+
+Body:
+{ "refresh_token": "..." }</pre>
+        </div>
+        <div class="req-res-box">
+          <span class="label label-res">Response <span class="status-code status-2xx">200</span></span>
+          <pre>{
+  "access_token": "eyJuZXc...",
+  "refresh_token": "bmV3IHJ...",
+  "expires_in": 3600
+}</pre>
+        </div>
+      </div>
+      <div class="entry-meta"><span>alice</span><span>2026-03-02</span></div>
+      <div class="try-it">
+        <button class="try-it-toggle" onclick="toggleTryIt(this)">Try it</button>
+        <div class="try-it-panel" data-method="POST" data-path="/api/v1/auth/refresh">
+          <div class="try-url-display"><span class="method-label">POST</span><span class="url-text"></span></div>
+          <div class="body-section">
+            <div class="param-section-title">Request Body</div>
+            <textarea class="try-body">{
+  "refresh_token": ""
+}</textarea>
+          </div>
+          <div class="try-it-actions">
+            <button class="btn-send" onclick="sendRequest(this)">Send</button>
+            <button class="btn-curl" onclick="copyCurl(this)">Copy as curl</button>
+          </div>
+          <div class="try-it-response"></div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Generated by <a href="https://github.com/potato-castle/mono-memory-mcp">mono-memory MCP</a>
+  </footer>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
