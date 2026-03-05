@@ -101,6 +101,8 @@ Clients do **not** need to clone the repo. Just install the plugin in Claude Cod
 /plugin install mono-memory-mcp@mono-memory-mcp
 ```
 
+> When prompted for scope, select **"Install for you (user scope)"**. The actual MCP server connection is only created in projects where you run the setup.
+
 Then run the setup skill to connect to your team's server:
 
 ```
