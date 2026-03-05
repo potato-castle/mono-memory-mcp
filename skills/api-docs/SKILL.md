@@ -6,6 +6,7 @@ description: Generate API documentation as an HTML file from memories stored in 
 # API Docs Generator
 
 Generate a beautiful HTML API documentation page from memories stored in the mono-memory MCP server.
+Uses caching — if `api-docs.html` already exists and nothing changed, patch only the diff instead of regenerating from scratch.
 
 ## Steps
 
@@ -19,44 +20,68 @@ Generate a beautiful HTML API documentation page from memories stored in the mon
 
 3. Also call `memory_timeline(project: "<project>", limit: 100)` to get all observations, then filter for API-relevant ones.
 
-4. Combine and deduplicate all results. Group endpoints by their **base path** (like Spring `@RequestMapping`):
+4. Combine and deduplicate all results.
+
+5. **Cache check**: Read `.api-docs-cache.json` if it exists.
+   - Compare the current memory IDs and `created_at` timestamps with the cache.
+   - Determine which memories are **new**, **updated**, or **removed** since last generation.
+   - If **no changes**: read existing `api-docs.html`, output it as-is, print `No changes detected. api-docs.html is up to date.` and stop.
+
+6. **If `api-docs.html` already exists AND there are only partial changes**:
+   - Read the existing `api-docs.html`
+   - Only modify the endpoint sections that changed (add new, update modified, remove deleted)
+   - Do NOT re-read the template files — just edit the existing HTML directly
+   - Skip to step 9
+
+7. **If `api-docs.html` does NOT exist (first run) OR too many changes to patch**:
+   - Read the template files from the plugin's `api-docs-template/` folder using Bash:
+     ```bash
+     cat ~/.claude/plugins/mono-memory-mcp/api-docs-template/index.html
+     cat ~/.claude/plugins/mono-memory-mcp/api-docs-template/styles.css
+     cat ~/.claude/plugins/mono-memory-mcp/api-docs-template/script.js
+     ```
+     Do NOT search for or explore these files. Just read the 3 files above directly.
+   - Generate `api-docs.html` from scratch:
+     - Use the template's HTML structure, CSS, and JS as-is
+     - Inline all CSS and JS into a single self-contained HTML file
+     - Group endpoints by base path (like Spring `@RequestMapping`)
+     - Keep all template features: Try it panels, auth dropdown, param tables, Send/Copy curl buttons
+
+8. Group endpoints by their **base path**:
    - Extract the common path prefix from each endpoint (e.g. `/api/v1/users/*` → group name **Users**, `/api/v1/auth/*` → group name **Auth**)
    - Each group becomes a separate section with the group name as heading and base path shown beside it
    - Table of contents lists each group with its base path
 
-5. Read the template files from the plugin's `api-docs-template/` folder using Bash:
-   ```bash
-   cat ~/.claude/plugins/mono-memory-mcp/api-docs-template/index.html
-   cat ~/.claude/plugins/mono-memory-mcp/api-docs-template/styles.css
-   cat ~/.claude/plugins/mono-memory-mcp/api-docs-template/script.js
-   ```
-   Do NOT search for or explore these files. Just read the 3 files above directly.
-
-6. Generate `api-docs.html` in the current project root based on the template:
-   - Use the template's HTML structure, CSS, and JS as-is
-   - Inline all CSS and JS into a single self-contained HTML file
-   - Replace the sample endpoint data with the actual memories gathered in steps 2-4
-   - Group endpoints by base path (like Spring `@RequestMapping`)
-   - Keep all template features: Try it panels, auth dropdown, param tables, Send/Copy curl buttons
-
-7. If no API-related memories are found, inform the user:
-   ```
-   No API-related memories found for project "<project>".
-
-   Save some API observations first:
-   - memory_save(project: "<project>", content: "GET /api/users - returns paginated user list", tags: "api,endpoint")
-   - memory_init(project: "<project>", section: "api", content: "REST API base URL: /api/v1 ...")
+9. **Save cache**: Write `.api-docs-cache.json`:
+   ```json
+   {
+     "generated_at": "<ISO timestamp>",
+     "memories": [
+       {"id": "<uuid>", "created_at": "<timestamp>"},
+       ...
+     ]
+   }
    ```
 
-8. On success, print:
-   ```
-   API documentation generated!
+10. If no API-related memories are found, inform the user:
+    ```
+    No API-related memories found for project "<project>".
 
-   | Item     | Value                |
-   |----------|----------------------|
-   | Project  | `<project>`          |
-   | File     | `./api-docs.html`    |
-   | Entries  | <count> memories     |
+    Save some API observations first:
+    - memory_save(project: "<project>", content: "GET /api/users - returns paginated user list", tags: "api,endpoint")
+    - memory_init(project: "<project>", section: "api", content: "REST API base URL: /api/v1 ...")
+    ```
 
-   Open the file in a browser to view.
-   ```
+11. On success, print:
+    ```
+    API documentation generated!
+
+    | Item     | Value                |
+    |----------|----------------------|
+    | Project  | `<project>`          |
+    | File     | `./api-docs.html`    |
+    | Entries  | <count> memories     |
+    | Mode     | <full / patched>     |
+
+    Open the file in a browser to view.
+    ```
