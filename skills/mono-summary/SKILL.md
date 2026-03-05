@@ -1,31 +1,28 @@
 ---
 name: mono-summary
-description: Show a summary of the current project's memory context and recent activity
+description: Display project context and recent team activity from mono-memory
 ---
 
 # Mono Summary
 
-Display a full summary of the project's stored context and recent team activity.
+## Constraints
 
-## Important
-
-- Do NOT use AskUserQuestion tool.
-- Run all MCP calls in parallel for speed.
+- MUST NOT use AskUserQuestion tool.
+- MUST run all MCP calls in parallel.
 
 ## Steps
 
-1. Detect the project name from the current directory name.
+1. Detect project name from current directory name.
 
-2. Call these in parallel:
-   - `memory_context(project: "<project>")` — get all stored sections
-   - `memory_timeline(project: "<project>", limit: 20)` — get recent activity
+2. Call in parallel:
+   - `memory_context(project: "<project>")`
+   - `memory_timeline(project: "<project>", limit: 20)`
 
-3. Display the results:
+3. Display:
    ```
    ## <project> — Project Summary
 
    ### Context
-   (For each section from memory_context, display section name and content)
 
    **<section>**
    <content>
@@ -37,10 +34,9 @@ Display a full summary of the project's stored context and recent team activity.
    | Date | Author | Summary | Tags |
    |------|--------|---------|------|
    | <date> | <author> | <first line of content> | <tags> |
-   | ... | ... | ... | ... |
    ```
 
-4. If no context and no timeline entries:
+4. If nothing found:
    ```
    No memories found for project "<project>".
 

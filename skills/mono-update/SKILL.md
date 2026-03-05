@@ -5,28 +5,31 @@ description: Update the mono-memory plugin to the latest version
 
 # Mono Update
 
-Update the mono-memory MCP plugin to the latest version from GitHub.
-
 ## Steps
 
-1. Run the update using Bash:
-   ```bash
-   cd ~/.claude/plugins/mono-memory-mcp && git pull origin main
+1. Print:
+   ```
+   Updating mono-memory plugin...
    ```
 
-2. Print the result:
-   - If updated:
-     ```
-     Plugin updated!
+2. Run update via Bash (downloads latest from GitHub, no git required):
+   ```bash
+   curl -sL https://github.com/potato-castle/mono-memory-mcp/archive/main.tar.gz | tar xz -C /tmp && cp -r /tmp/mono-memory-mcp-main/* ~/.claude/plugins/mono-memory-mcp/ && rm -rf /tmp/mono-memory-mcp-main && echo "Updated successfully"
+   ```
 
-     > Restart Claude Code to apply changes.
-     ```
-   - If already up to date:
-     ```
-     Already up to date.
-     ```
-   - If error (e.g. directory not found):
-     ```
-     Plugin not found at ~/.claude/plugins/mono-memory-mcp.
-     Reinstall with: /plugin marketplace add potato-castle/mono-memory-mcp
-     ```
+3. If success:
+   ```
+   Plugin updated!
+
+   > Restart Claude Code to apply changes.
+   ```
+
+4. If curl/tar fails:
+   ```
+   Auto-update failed. Run these commands manually in Claude Code:
+
+   /plugin uninstall mono-memory-mcp@mono-memory-mcp
+   /plugin install mono-memory-mcp@mono-memory-mcp
+
+   Then restart Claude Code.
+   ```

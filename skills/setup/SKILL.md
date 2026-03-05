@@ -1,22 +1,19 @@
 ---
 name: setup
-description: Set up Mono Memory MCP server connection, author, and CLAUDE.md
+description: Configure mono-memory MCP server connection and CLAUDE.md for a project
 ---
 
-# Mono Memory Setup
+# Setup
 
-Set up the Mono Memory MCP server connection and configure CLAUDE.md for auto-recording.
+## Constraints
 
-## Important
-
-- Do NOT use AskUserQuestion tool. Do NOT present selection options or default values.
-- Instead, output a plain text question and wait for the user to type their answer.
-- When reading or writing files, do it automatically without asking for permission. Use Bash tool with `python3 -c` to avoid Read/Write permission prompts.
-- Write `.mcp.json` in the current project root (not `~/.mcp.json`).
+- MUST NOT use AskUserQuestion tool. Output plain text questions and wait for reply.
+- MUST use Bash tool with `python3 -c` to write files (avoids Read/Write permission prompts).
+- MUST write `.mcp.json` in the current project root (not `~/.mcp.json`).
 
 ## Steps
 
-1. Print this exact markdown and wait for the user's reply:
+1. Print and wait for reply:
    ```
    ## Mono Memory Setup
 
@@ -27,18 +24,18 @@ Set up the Mono Memory MCP server connection and configure CLAUDE.md for auto-re
    Enter the full URL of your Mono Memory server:
    ```
 
-2. After receiving the server URL, print this exact markdown and wait for the user's reply:
+2. Print and wait for reply:
    ```
    **Step 2/2** — Author
 
    Enter your name (used to tag memories you save):
    ```
 
-3. Validate the server URL: must start with `http://` or `https://`. If not, ask the user to re-enter.
+3. Validate URL starts with `http://` or `https://`. If not, ask to re-enter.
 
-4. Automatically detect the project name from the current directory name (e.g. if cwd is `/Users/alice/projects/my-app`, use `my-app`).
+4. Detect project name from current directory name.
 
-5. Use Bash tool to do all setup in a single command. Pass user inputs via environment variables (NOT string interpolation) to prevent injection:
+5. Run setup via Bash. MUST pass inputs as environment variables (not string interpolation):
    ```bash
    SERVER_URL='<URL>' AUTHOR_NAME='<author>' python3 -c "
    import json, os, sys
@@ -119,7 +116,7 @@ Set up the Mono Memory MCP server connection and configure CLAUDE.md for auto-re
    "
    ```
 
-6. Print this exact markdown as the completion message (fill in the actual values — project name is the auto-detected directory name):
+6. Print completion (fill in actual values):
    ```
    ---
 
